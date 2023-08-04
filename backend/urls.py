@@ -408,3 +408,13 @@ admin.site.empty_value_display = "N/A"
 
 if settings.DEBUG:
     urlpatterns += [path("silk/", include("silk.urls", namespace="silk"))]
+
+from invoicing.utils import invoice_view
+
+urlpatterns += [
+    path(
+        "api/invoice/<str:invoice_id>/",
+        invoice_view,
+        name="invoice-view",
+    ),
+]

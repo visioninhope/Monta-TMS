@@ -18,7 +18,7 @@
 import React, { Suspense, useEffect } from "react";
 import { Card, Flex, Skeleton } from "@mantine/core";
 import { usePageStyles } from "@/styles/PageStyles";
-import { WebSocketManager, WebsocketMessageProps } from "@/utils/websockets";
+import { WebSocketManager, WebSocketMessageProps } from "@/utils/websockets";
 import {
   ENABLE_WEBSOCKETS,
   getUserId,
@@ -55,6 +55,13 @@ const GoodJobPage = React.lazy(
   () => import("../../components/billing/GoodJob")
 );
 
+const reconnect = () => {
+  webSocketManager.connect(
+    "billing_client",
+    `${WEB_SOCKET_URL}/billing_client/`
+  );
+};
+
 const BillingClient: React.FC = () => {
   const { classes } = usePageStyles();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -79,7 +86,7 @@ const BillingClient: React.FC = () => {
           },
 
           onMessage: (event: MessageEvent) => {
-            const data = JSON.parse(event.data) as WebsocketMessageProps;
+            const data = JSON.parse(event.data) as WebSocketMessageProps;
 
             console.log("Billing Client Websocket Message", data);
             if (data.action === "orders_ready" && data.step === 2) {
@@ -156,17 +163,9 @@ const BillingClient: React.FC = () => {
                 `[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`
               );
             } else {
-              console.info(
-                "[close] Connection died. Reconnect will be attempted in 1 second."
-              );
-              setTimeout(
-                () =>
-                  webSocketManager.connect(
-                    "billing_client",
-                    `${WEB_SOCKET_URL}/billing_client/`
-                  ),
-                WEBSOCKET_RETRY_INTERVAL
-              );
+              // Connection died, reconnect
+              console.log("Connection died. Reconnecting...");
+              reconnect();
             }
           },
 
